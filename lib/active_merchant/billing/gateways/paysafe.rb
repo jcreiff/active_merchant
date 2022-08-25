@@ -26,6 +26,7 @@ module ActiveMerchant #:nodoc:
         add_three_d_secure(post, payment, options) if options[:three_d_secure]
         add_stored_credential(post, options) if options[:stored_credential]
         add_split_pay_details(post, options)
+        add_funding_transaction(post, options)
         post[:settleWithAuth] = true
 
         commit(:post, 'auths', post, options)
@@ -40,6 +41,7 @@ module ActiveMerchant #:nodoc:
         add_customer_data(post, payment, options) unless payment.is_a?(String)
         add_three_d_secure(post, payment, options) if options[:three_d_secure]
         add_stored_credential(post, options) if options[:stored_credential]
+        add_funding_transaction(post, options)
 
         commit(:post, 'auths', post, options)
       end
@@ -284,6 +286,15 @@ module ActiveMerchant #:nodoc:
           split_pay << split
         end
         post[:splitpay] = split_pay
+      end
+
+      def add_funding_transaction(post, options)
+        return unless options[:funding_transaction]
+
+        post[:fundingTransaction] = {}
+        post[:fundingTransaction][:type] = options[:funding_transaction]
+        post[:profile] ||= {}
+        post[:profile][:merchantCustomerId] = options[:customer_id] || SecureRandom.hex(12)
       end
 
       def add_stored_credential(post, options)
