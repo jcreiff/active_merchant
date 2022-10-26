@@ -91,7 +91,7 @@ module ActiveMerchant #:nodoc:
       # More operations are supported by the gateway itself, but
       # are not supported in this library.
       SUPPORTED_TRANSACTIONS = {
-        purchase:   'A',
+        purchase:   '0',
         authorize:  '1',
         capture:    '2',
         refund:     '3',
@@ -266,9 +266,13 @@ module ActiveMerchant #:nodoc:
       end
 
       def verify(creditcard, options = {})
-        MultiResponse.run(:use_first_response) do |r|
-          r.process { authorize(100, creditcard, options) }
-          r.process(:ignore_result) { void(r.authorization, options) }
+        if options[:sca_exemption_behavior_override] == 'endpoint_and_ntid'
+          purchase(0, creditcard, options)
+        else
+          MultiResponse.run(:use_first_response) do |r|
+            r.process { authorize(100, creditcard, options) }
+            r.process(:ignore_result) { void(r.authorization, options) }
+          end
         end
       end
 
@@ -357,14 +361,17 @@ module ActiveMerchant #:nodoc:
         case options[:stored_credential][:initial_transaction]
         when true
           data[:DS_MERCHANT_COF_INI] = 'S'
+          # recurring_cof_type = 'R'
         when false
           data[:DS_MERCHANT_COF_INI] = 'N'
           data[:DS_MERCHANT_COF_TXNID] = options[:stored_credential][:network_transaction_id] if options[:stored_credential][:network_transaction_id]
+          # recurring_cof_type = '0'
         end
 
         case options[:stored_credential][:reason_type]
         when 'recurring'
           data[:DS_MERCHANT_COF_TYPE] = 'R'
+          # data[:DS_MERCHANT_COF_TYPE] = recurring_cof_type
         when 'installment'
           data[:DS_MERCHANT_COF_TYPE] = 'I'
         when 'unscheduled'
