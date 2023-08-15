@@ -18,7 +18,8 @@ class RapydTest < Test::Unit::TestCase
       description: 'Describe this transaction',
       statement_descriptor: 'Statement Descriptor',
       email: 'test@example.com',
-      billing_address: address(name: 'Jim Reynolds')
+      billing_address: address(name: 'Jim Reynolds'),
+      order_id: '987654321'
     }
 
     @metadata = {
@@ -87,6 +88,7 @@ class RapydTest < Test::Unit::TestCase
       assert_match(/"error_payment_url":"www.google.com"/, data)
       assert_match(/"description":"Describe this transaction"/, data)
       assert_match(/"statement_descriptor":"Statement Descriptor"/, data)
+      assert_match(/"merchant_reference_id":"987654321"/, data)
     end.respond_with(successful_authorize_response)
 
     assert_success response
